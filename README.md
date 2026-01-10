@@ -1,17 +1,17 @@
-# 🔐 FastAPI Auth Service (JWT + Redis)
+#  FastAPI Auth Service (JWT + Redis)
 
 A lightweight authentication service built with **FastAPI**, **JWT access tokens**, and **Redis-backed refresh tokens**.
 
 This service handles:
-- 🔑 User registration & login
-- 🔒 Secure password hashing (Argon2)
-- ⚡ Short-lived JWT access tokens
-- 🔄 Long-lived refresh tokens stored in Redis
-- 🛡️ Protected routes using OAuth2 Bearer tokens
+-  User registration & login
+-  Secure password hashing (Argon2)
+-  Short-lived JWT access tokens
+-  Long-lived refresh tokens stored in Redis
+-  Protected routes using OAuth2 Bearer tokens
 
 ---
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 | Technology | Purpose |
 |-----------|---------|
@@ -55,34 +55,31 @@ DB_PASSWORD=your_db_password
 
 # JWT
 JWT_KEY=super-secret-key-change-this
-
-# Redis
-REDIS_URL=redis://localhost:6379
 ```
 
-> ⚠️ **Never commit `.env` to GitHub**  
+>  **Don't commit `.env` to GitHub**  
 > Add `.env` to your `.gitignore` file
 
 ---
 
-## 🧠 Authentication Overview
+##  Authentication Overview
 
 ### Access Tokens
-- 📄 **Format**: JSON Web Tokens (JWT)
-- ⏱️ **Lifetime**: Short-lived (15 minutes)
-- 📡 **Transport**: Sent via `Authorization: Bearer <token>`
-- 💾 **Storage**: Stateless (not stored server-side)
+-  **Format**: JSON Web Tokens (JWT)
+-  **Lifetime**: Short-lived (15 minutes)
+-  **Transport**: Sent via `Authorization: Bearer <token>`
+-  **Storage**: Stateless (not stored server-side)
 
 ### Refresh Tokens
-- 🔐 **Format**: Cryptographically secure random strings
-- ⏱️ **Lifetime**: Long-lived (14 days)
-- 💾 **Storage**: Stored in Redis with automatic TTL expiration
-- 🍪 **Transport**: Sent as HttpOnly cookies
-- 🔄 **Purpose**: Issue new access tokens without re-authentication
+-  **Format**: Cryptographically secure random strings
+-  **Lifetime**: Long-lived (14 days)
+-  **Storage**: Stored in Redis with automatic TTL expiration
+-  **Transport**: Sent as HttpOnly cookies
+-  **Purpose**: Issue new access tokens without re-authentication
 
 ---
 
-## ▶️ Running the App
+##  Running the App
 
 ### 1️⃣ Start Redis
 
@@ -131,14 +128,14 @@ http://127.0.0.1:8000/docs
 ```
 
 From here you can:
-- ✅ Register a user
-- 🔓 Log in
-- 🔑 Authorize using a Bearer token
-- 🛡️ Call protected routes
+-  Register a user
+-  Log in
+-  Authorize using a Bearer token
+-  Call protected routes
 
 ---
 
-## 🔑 Using Authorization: Bearer
+##  Using Authorization: Bearer
 
 After logging in, include the access token in request headers:
 
@@ -163,7 +160,7 @@ def get_topics(token: str = Depends(oauth2_scheme)):
 
 ---
 
-## 🔄 Token Refresh Flow
+##  Token Refresh Flow
 
 ```mermaid
 sequenceDiagram
@@ -182,20 +179,20 @@ sequenceDiagram
 ```
 
 ### How It Works:
-1. ⏰ Access token expires
-2. 🚫 API returns `401 Access token expired`
-3. 🔄 Client calls `/auth/refresh`
-4. ✅ New access token is issued
-5. 🔁 Client retries original request
+1.  Access token expires
+2.  API returns `401 Access token expired`
+3.  Client calls `/auth/refresh`
+4.  New access token is issued
+5.  Client retries original request
 
 Refresh tokens are:
-- 💾 Stored only in Redis
-- ⏱️ Automatically expired after 14 days
-- 🗑️ Invalidated on logout
+-  Stored only in Redis
+-  Automatically expired after 14 days
+-  Invalidated on logout
 
 ---
 
-## 🧪 Redis Debugging
+##  Redis Debugging
 
 ### Check stored refresh tokens:
 
@@ -224,39 +221,39 @@ redis-cli monitor
 
 ---
 
-## 🔒 Security Notes
+##  Security Notes
 
 | Feature | Implementation |
 |---------|---------------|
-| 🔐 **Password Hashing** | Argon2 (memory-hard, resistant to GPU attacks) |
-| 💉 **SQL Injection** | Parameterized queries throughout |
-| 🍪 **Refresh Tokens** | HttpOnly cookies, server-side storage |
-| ⏱️ **Access Tokens** | Short-lived (15 min) to limit exposure |
-| 🔑 **Token Storage** | Redis with automatic expiration |
+|  **Password Hashing** | Argon2 (memory-hard, resistant to GPU attacks) |
+|  **SQL Injection** | Parameterized queries throughout |
+|  **Refresh Tokens** | HttpOnly cookies, server-side storage |
+|  **Access Tokens** | Short-lived (15 min) to limit exposure |
+|  **Token Storage** | Redis with automatic expiration |
 
 ### Best Practices Implemented:
-- ✅ Passwords are **never** stored in plaintext
-- ✅ SQL queries are **parameterized** (SQL injection safe)
-- ✅ Refresh tokens are **HttpOnly** and **server-side only**
-- ✅ Access tokens are **short-lived** and **stateless**
-- ✅ Secrets are **environment-based** (not hardcoded)
+-  Passwords are **never** stored in plaintext
+-  SQL queries are **parameterized** (SQL injection safe)
+-  Refresh tokens are **HttpOnly** and **server-side only**
+-  Access tokens are **short-lived** and **stateless**
+-  Secrets are **environment-based** (not hardcoded)
 
 ---
 
 ## 🛠️ Future Improvements
 
-- [ ] 🚦 Rate limiting on auth endpoints
-- [ ] 🔄 Token rotation for enhanced security
-- [ ] 🎯 Scope-based authorization (role management)
-- [ ] 🐳 Docker + docker-compose support
-- [ ] ☁️ Deployment configuration (Railway / Fly / AWS)
-- [ ] 📧 Email verification flow
-- [ ] 🔐 2FA support
-- [ ] 📊 Audit logging
+- [ ]  Rate limiting on auth endpoints
+- [ ]  Token rotation for enhanced security
+- [ ]  Scope-based authorization (role management)
+- [ ]  Docker + docker-compose support
+- [ ]  Deployment configuration (Railway / Fly / AWS)
+- [ ]  Email verification flow
+- [ ]  2FA support
+- [ ]  Audit logging
 
 ---
 
-## 🧠 TL;DR
+##  TL;DR
 
 **Quick Start:**
 
@@ -276,11 +273,11 @@ Then open **http://127.0.0.1:8000/docs** and you're good to go! 🚀
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| `POST` | `/auth/register` | Create new user account | ❌ |
-| `POST` | `/auth/login` | Login and receive tokens | ❌ |
-| `POST` | `/auth/refresh` | Get new access token | 🍪 Refresh token |
-| `POST` | `/auth/logout` | Invalidate refresh token | 🍪 Refresh token |
-| `GET` | `/questions/topics` | Get question topics | 🔑 Bearer token |
+| `POST` | `/auth/register` | Create new user account |  |
+| `POST` | `/auth/login` | Login and receive tokens |  |
+| `POST` | `/auth/refresh` | Get new access token |  Refresh token |
+| `POST` | `/auth/logout` | Invalidate refresh token |  Refresh token |
+| `GET` | `/questions/topics` | Get question topics |  Bearer token |
 
 ---
 
@@ -290,7 +287,7 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions, issues, and feature requests are welcome!
 
@@ -308,4 +305,4 @@ If you have any questions or run into issues, please open an issue on GitHub.
 
 ---
 
-**Built with ❤️ using FastAPI**
+**Built with intent using FastAPI**
