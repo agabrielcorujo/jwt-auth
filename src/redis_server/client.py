@@ -35,7 +35,7 @@ class Cache:
         - Defaults to a local Redis instance if REDIS_URL is not set
         - Enables `decode_responses` so Redis returns strings instead of bytes
         """
-        self.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+        self.REDIS_URL = "redis://redis:6379"
 
         self.redis_client = redis.Redis.from_url(
             self.REDIS_URL,
