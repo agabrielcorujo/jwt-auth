@@ -89,26 +89,6 @@ Install Docker. Then, cd to the src folder and in a terminal run:
 docker compose up --build
 ```
 
-Verify Redis is running:
-
-```bash
-redis-cli ping
-```
-
-Expected response:
-
-```text
-PONG
-```
-
-### 2️⃣ Run FastAPI with Uvicorn
-
-In another terminal (project root):
-
-```bash
-uvicorn app:app --reload
-```
-
 You should see:
 
 ```text
@@ -245,7 +225,6 @@ redis-cli monitor
 - [ ]  Rate limiting on auth endpoints
 - [ ]  Token rotation for enhanced security
 - [ ]  Scope-based authorization (role management)
-- [ ]  Docker + docker-compose support
 - [ ]  Deployment configuration (Railway / Fly / AWS)
 - [ ]  Email verification flow
 - [ ]  2FA support
