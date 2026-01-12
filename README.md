@@ -81,12 +81,12 @@ JWT_KEY=super-secret-key-change-this
 
 ##  Running the App
 
-### 1️⃣ Start Redis
+### Docker Compose 
 
-In one terminal:
+Install Docker. Then, cd to the src folder and in a terminal run:
 
 ```bash
-redis-server
+docker compose up --build
 ```
 
 Verify Redis is running:
