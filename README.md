@@ -17,7 +17,7 @@ This service handles:
 ### Install this repo as a dependency and import database utilities directly:
 
 ```bash
-pip install git+https://github.com/yourusername/your-repo-name.git
+pip install git+https://github.com/agabrielcorujo/jwt-auth.git
 ```
 
 Then import and use:
