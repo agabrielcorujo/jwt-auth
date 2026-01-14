@@ -16,14 +16,14 @@ Authentication design:
 
 from fastapi import APIRouter, HTTPException, Response, Cookie
 
-from jwt_auth import (
+from jwt_auth.jwt_auth import (
     create_access_token,
     create_refresh_token,
     store_refresh_token,
     get_id_from_token,
 )
 
-from user_auth import (
+from jwt_auth.user_auth import (
     verify_password,
     check_user_by_email,
     LoginRequest,
@@ -31,7 +31,7 @@ from user_auth import (
     create_user,
 )
 
-from redis_server.client import cache
+from jwt_auth.redis_server.client import cache
 
 
 # ------------------------------------------------------------------------------
