@@ -20,9 +20,10 @@ This service handles:
 pip install git+https://github.com/agabrielcorujo/jwt-auth.git
 ```
 
-### Or add this to your requirements.txt if using docker. 
+### Or add this to your requirements.txt if using docker (install git in your docker file using a RUN command too). 
+
 ```bash
-pip install git+https://github.com/agabrielcorujo/jwt-auth.git
+jwt-auth @ git+https://github.com/agabrielcorujo/jwt-auth.git
 ```
 
 Then import and use:
