@@ -1,17 +1,40 @@
-#  FastAPI Auth Service (JWT + Redis)
+# FastAPI Auth Service (JWT + Redis) + Database Utilities
 
-A lightweight authentication service built with **FastAPI**, **JWT access tokens**, and **Redis-backed refresh tokens**.
+A lightweight authentication service **AND** importable database utility library built with **FastAPI**, **JWT access tokens**, and **Redis-backed refresh tokens**. 
 
 This service handles:
--  User registration & login
--  Secure password hashing (Argon2)
--  Short-lived JWT access tokens
--  Long-lived refresh tokens stored in Redis
--  Protected routes using OAuth2 Bearer tokens
+- User registration & login
+- Secure password hashing (Argon2)
+- Short-lived JWT access tokens
+- Long-lived refresh tokens stored in Redis
+- Protected routes using OAuth2 Bearer tokens
+- **Safe PostgreSQL database queries (importable)**
 
 ---
 
-##  Tech Stack
+## Usage
+
+### Install this repo as a dependency and import database utilities directly:
+
+```bash
+pip install git+https://github.com/yourusername/your-repo-name.git
+```
+
+Then import and use:
+
+```python
+from jwt_auth.db import safe_query
+from jwt_auth.auth_router import router as auth_router
+
+# Query your PostgreSQL database safely with parameterized queries
+results = safe_query("SELECT * FROM users WHERE id = %s", (user_id,),fetch="one")
+#decode and refresh access tokens, register,and login using auth endpoints
+app = FastAPI()
+# Mount auth routes
+app.include_router(auth_router)
+```
+
+## Tech Stack
 
 | Technology | Purpose |
 |-----------|---------|
@@ -28,7 +51,7 @@ This service handles:
 
 ```text
 .
-├── app.py                # FastAPI entry point
+├── example_app.py        # FastAPI entry point
 ├── auth_router.py        # /auth routes (login, register, refresh, logout)
 ├── jwt_auth.py           # JWT + refresh token utilities
 ├── user_auth.py          # Password hashing & user DB helpers
@@ -41,81 +64,72 @@ This service handles:
 
 ---
 
-## ⚙️ Environment Variables
+## 💾 Database Schema Requirements
 
-Create a `.env` file in the project root:
+Your PostgreSQL database **must** contain a `users` table with the following schema:
 
-```env
-# PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=your_db_name
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-
-# JWT
-JWT_KEY=super-secret-key-change-this
+```sql
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
->  **Don't commit `.env` to GitHub**  
+Required columns (in this order):
+- `user_id` - Primary key (auto-incrementing)
+- `email` - Unique user email
+- `password_hash` - Hashed password (never plaintext)
+- `first_name` - User's first name
+- `last_name` - User's last name
+- `created_at` - Account creation timestamp
+
+---
+
+## ⚙️ Environment Variables
+
+Create a `.env` file **in the project root** (wherever the app is run):
+
+```env
+# ---- Database ----
+DB_USER=DB_USER
+DB_PASSWORD=DB_PASSWORD
+DB_HOST=DB_HOST
+DB_PORT=DB_PORT
+DB_NAME=DB_NAME
+
+# ---- Auth / JWT ----
+JWT_KEY=JWT_KEY
+```
+
+> **⚠️ Don't commit `.env` to GitHub**  
 > Add `.env` to your `.gitignore` file
 
 ---
 
-##  Authentication Overview
+## Authentication Overview
 
 ### Access Tokens
--  **Format**: JSON Web Tokens (JWT)
--  **Lifetime**: Short-lived (15 minutes)
--  **Transport**: Sent via `Authorization: Bearer <token>`
--  **Storage**: Stateless (not stored server-side)
+
+- **Format**: JSON Web Tokens (JWT)
+- **Lifetime**: Short-lived (15 minutes)
+- **Transport**: Sent via `Authorization: Bearer <token>`
+- **Storage**: Stateless (not stored server-side)
 
 ### Refresh Tokens
--  **Format**: Cryptographically secure random strings
--  **Lifetime**: Long-lived (14 days)
--  **Storage**: Stored in Redis with automatic TTL expiration
--  **Transport**: Sent as HttpOnly cookies
--  **Purpose**: Issue new access tokens without re-authentication
+
+- **Format**: Cryptographically secure random strings
+- **Lifetime**: Long-lived (14 days)
+- **Storage**: Stored in Redis with automatic TTL expiration
+- **Transport**: Sent as HttpOnly cookies
+- **Purpose**: Issue new access tokens without re-authentication
 
 ---
 
-##  Running the App
-
-### Docker Compose 
-
-Install Docker. Then, cd to the src folder and in a terminal run:
-
-```bash
-docker compose up --build
-```
-
-You should see:
-
-```text
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [xxxxx] using StatReload
-INFO:     Started server process [xxxxx]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-```
-
-### 3️⃣ Open Swagger UI
-
-Navigate to:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-From here you can:
--  Register a user
--  Log in
--  Authorize using a Bearer token
--  Call protected routes
-
----
-
-##  Using Authorization: Bearer
+## Using Authorization: Bearer
 
 After logging in, include the access token in request headers:
 
@@ -140,7 +154,7 @@ def get_topics(token: str = Depends(oauth2_scheme)):
 
 ---
 
-##  Token Refresh Flow
+## Token Refresh Flow
 
 ```mermaid
 sequenceDiagram
@@ -159,20 +173,21 @@ sequenceDiagram
 ```
 
 ### How It Works:
-1.  Access token expires
-2.  API returns `401 Access token expired`
-3.  Client calls `/auth/refresh`
-4.  New access token is issued
-5.  Client retries original request
+
+1. Access token expires
+2. API returns `401 Access token expired`
+3. Client calls `/auth/refresh`
+4. New access token is issued
+5. Client retries original request
 
 Refresh tokens are:
--  Stored only in Redis
--  Automatically expired after 14 days
--  Invalidated on logout
+- Stored only in Redis
+- Automatically expired after 14 days
+- Invalidated on logout
 
 ---
 
-##  Redis Debugging
+## Redis Debugging
 
 ### Check stored refresh tokens:
 
@@ -201,38 +216,39 @@ redis-cli monitor
 
 ---
 
-##  Security Notes
+## Security Notes
 
 | Feature | Implementation |
-|---------|---------------|
-|  **Password Hashing** | Argon2 (memory-hard, resistant to GPU attacks) |
-|  **SQL Injection** | Parameterized queries throughout |
-|  **Refresh Tokens** | HttpOnly cookies, server-side storage |
-|  **Access Tokens** | Short-lived (15 min) to limit exposure |
-|  **Token Storage** | Redis with automatic expiration |
+|---------|----------------|
+| **Password Hashing** | Argon2 (memory-hard, resistant to GPU attacks) |
+| **SQL Injection** | Parameterized queries throughout |
+| **Refresh Tokens** | HttpOnly cookies, server-side storage |
+| **Access Tokens** | Short-lived (15 min) to limit exposure |
+| **Token Storage** | Redis with automatic expiration |
 
 ### Best Practices Implemented:
--  Passwords are **never** stored in plaintext
--  SQL queries are **parameterized** (SQL injection safe)
--  Refresh tokens are **HttpOnly** and **server-side only**
--  Access tokens are **short-lived** and **stateless**
--  Secrets are **environment-based** (not hardcoded)
+
+- Passwords are **never** stored in plaintext
+- SQL queries are **parameterized** (SQL injection safe)
+- Refresh tokens are **HttpOnly** and **server-side only**
+- Access tokens are **short-lived** and **stateless**
+- Secrets are **environment-based** (not hardcoded)
 
 ---
 
 ## 🛠️ Future Improvements
 
-- [ ]  Rate limiting on auth endpoints
-- [ ]  Token rotation for enhanced security
-- [ ]  Scope-based authorization (role management)
-- [ ]  Deployment configuration (Railway / Fly / AWS)
-- [ ]  Email verification flow
-- [ ]  2FA support
-- [ ]  Audit logging
+- [ ] Rate limiting on auth endpoints
+- [ ] Token rotation for enhanced security
+- [ ] Scope-based authorization (role management)
+- [ ] Deployment configuration (Railway / Fly / AWS)
+- [ ] Email verification flow
+- [ ] 2FA support
+- [ ] Audit logging
 
 ---
 
-##  TL;DR
+## TL;DR
 
 **Quick Start:**
 
@@ -246,17 +262,28 @@ uvicorn app:app --reload
 
 Then open **http://127.0.0.1:8000/docs** and you're good to go! 🚀
 
+**Or use as a library:**
+
+```bash
+pip install git+https://github.com/yourusername/your-repo-name.git
+```
+
+```python
+from jwt_auth.db import safe_query
+results = safe_query("SELECT * FROM users WHERE email = %s", (email,))
+```
+
 ---
 
 ## 📝 API Endpoints
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| `POST` | `/auth/register` | Create new user account |  |
-| `POST` | `/auth/login` | Login and receive tokens |  |
-| `POST` | `/auth/refresh` | Get new access token |  Refresh token |
-| `POST` | `/auth/logout` | Invalidate refresh token |  Refresh token |
-| `GET` | `/questions/topics` | Get question topics |  Bearer token |
+| POST | /auth/register | Create new user account | ❌ |
+| POST | /auth/login | Login and receive tokens | ❌ |
+| POST | /auth/refresh | Get new access token | Refresh token |
+| POST | /auth/logout | Invalidate refresh token | Refresh token |
+| GET | /questions/topics | Get question topics | Bearer token |
 
 ---
 
@@ -266,7 +293,7 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-##  Contributing
+## Contributing
 
 Contributions, issues, and feature requests are welcome!
 
@@ -284,4 +311,4 @@ If you have any questions or run into issues, please open an issue on GitHub.
 
 ---
 
-**Built with intent using FastAPI**
+**Built with intent using FastAPI** 🚀

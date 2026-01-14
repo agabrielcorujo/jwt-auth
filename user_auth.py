@@ -58,13 +58,11 @@ class RegisterRequest(BaseModel):
         password (str): Plaintext password to be hashed and stored
         first_name (str): User's first name
         last_name (str): User's last name
-        exam (str): Selected FE exam discipline
     """
     email: str
     password: str
     first_name: str
     last_name: str
-    exam: str
 
 
 # ------------------------------------------------------------------------------
@@ -170,10 +168,9 @@ def create_user(credentials: RegisterRequest):
             password_hash,
             first_name,
             last_name,
-            exam,
             created_at
         )
-        VALUES (%s, %s, %s, %s, %s, NOW())
+        VALUES (%s, %s, %s, %s, NOW())
         ON CONFLICT (email) DO NOTHING
         RETURNING id;
         """
@@ -185,7 +182,6 @@ def create_user(credentials: RegisterRequest):
                 hash_password(credentials.password),
                 credentials.first_name,
                 credentials.last_name,
-                credentials.exam,
             ),
             fetch="one",
             insert=True
