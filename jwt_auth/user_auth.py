@@ -13,7 +13,7 @@ helper to ensure pooled connections and parameterized queries.
 """
 
 from passlib.context import CryptContext
-from db import safe_query
+from jwt_auth.db import safe_query
 from pydantic import BaseModel, EmailStr
 
 
