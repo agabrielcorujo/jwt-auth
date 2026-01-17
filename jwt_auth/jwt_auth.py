@@ -21,9 +21,20 @@ import secrets
 from dotenv import load_dotenv
 import os
 
+class TokenError(Exception):
+    """Base class for token-related errors."""
+
+class AccessTokenExpiredError(TokenError):
+    """Raised when an access token has expired."""
+
+class InvalidAccessTokenError(TokenError):
+    """Raised when an access token is invalid or malformed."""
+
+class TokenConfigurationError(TokenError):
+    """Raised when JWT configuration is invalid or missing."""
+
 # Load environment variables from .env
 load_dotenv()
-
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -35,6 +46,8 @@ This value must remain private and consistent across services.
 """
 JWT_KEY = os.getenv("JWT_KEY")
 
+if not JWT_KEY:
+    raise TokenConfigurationError("JWT_KEY is not configured")
 """
 Access token lifetime in minutes.
 Short-lived tokens reduce blast radius if compromised.
@@ -105,29 +118,18 @@ def decode_access_token(token: str) -> str:
             algorithms=["HS256"],
             options={"verify_exp": True}
         )
-
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid access token"
-            )
-
-        return user_id
-
+  
     except jwt.ExpiredSignatureError:
-        # Frontend uses this signal to trigger refresh flow
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Access token expired"
-        )
+        raise AccessTokenExpiredError("Access token expired")
 
     except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid access token"
-        )
+        raise InvalidAccessTokenError("Invalid access token")
 
+    user_id = payload.get("sub")
+    if not user_id:
+        raise InvalidAccessTokenError("Access token missing subject")
+
+    return user_id
 
 # ------------------------------------------------------------------------------
 # Refresh token helpers
@@ -159,12 +161,11 @@ def store_refresh_token(redis_client, refresh_token: str, user_id: str) -> None:
         refresh_token (str): Generated refresh token
         user_id (str): User ID associated with the token
     """
-    if not redis_client.get(f"refresh:{refresh_token}"):
-        redis_client.setex(
-            f"refresh:{refresh_token}",
-            REFRESH_TOKEN_TTL_SECONDS,
-            user_id
-        )
+    redis_client.setex(
+        f"refresh:{refresh_token}",
+        REFRESH_TOKEN_TTL_SECONDS,
+        user_id,
+    )
 
 
 def get_id_from_token(redis_client, refresh_token: str) -> str:

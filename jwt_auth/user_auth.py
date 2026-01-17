@@ -64,7 +64,18 @@ class RegisterRequest(BaseModel):
     first_name: str
     last_name: str
 
+class AuthValidationError(Exception):
+    """Raised when auth input is invalid."""
 
+class UserAlreadyExistsError(Exception):
+    """Raised when attempting to create a user with an existing email."""
+
+class DatabaseOperationError(Exception):
+    """Raised when a database operation fails unexpectedly."""
+
+class InvalidCredentialsError(Exception):
+    """Raised when login credentials are invalid."""
+    
 # ------------------------------------------------------------------------------
 # Password utilities
 # ------------------------------------------------------------------------------
@@ -83,7 +94,7 @@ def hash_password(password: str) -> str:
         ValueError: If the password is empty or None
     """
     if not password:
-        raise ValueError("Password must not be empty")
+        raise AuthValidationError("Password cannot be empty")
 
     return pwd_context.hash(password)
 
@@ -103,7 +114,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
         ValueError: If either argument is missing
     """
     if not password or not hashed_password:
-        raise ValueError("Password and hash must be provided")
+        raise AuthValidationError("Password verification inputs missing")
 
     return pwd_context.verify(password, hashed_password)
 
@@ -112,7 +123,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 # Database helpers
 # ------------------------------------------------------------------------------
 
-def check_user_by_email(email: str):
+def check_user_by_email(email: str) -> dict | None:
     """
     Retrieve a user record by email address.
 
@@ -143,7 +154,7 @@ def check_user_by_email(email: str):
     return None
 
 
-def create_user(credentials: RegisterRequest):
+def create_user(credentials: RegisterRequest) -> dict:
     """
     Create a new user in the database if the email does not already exist.
 
@@ -161,19 +172,21 @@ def create_user(credentials: RegisterRequest):
             - created (bool): Whether the user was successfully created
             - user_id (str | None): UUID of the created user, if applicable
     """
+
+    query = """
+    INSERT INTO users (
+    email,
+    password_hash,
+    first_name,
+    last_name,
+    created_at
+    )
+    VALUES (%s, %s, %s, %s, NOW())
+    ON CONFLICT (email) DO NOTHING
+    RETURNING id;
+    """
+
     try:
-        query = """
-        INSERT INTO users (
-            email,
-            password_hash,
-            first_name,
-            last_name,
-            created_at
-        )
-        VALUES (%s, %s, %s, %s, NOW())
-        ON CONFLICT (email) DO NOTHING
-        RETURNING id;
-        """
 
         row = safe_query(
             query,
@@ -187,20 +200,15 @@ def create_user(credentials: RegisterRequest):
             insert=True
         )
 
-        if row:
-            return {
-                "created": True,
-                "user_id": row[0],
-            }
-        else:
-            return {
-                "created": False,
-                "user_id": None,
-            }
-
     except Exception as e:
-        print("create_user_if_not_exists error:", e)
-        return {
-            "created": False,
-            "user_id": None,
-        }
+        # this should be logged, not printed
+        raise DatabaseOperationError("Failed to create user") from e
+
+    if not row:
+        raise UserAlreadyExistsError("User with this email already exists")
+    
+    return {
+        "created": True,
+        "user_id": row[0],
+    }
+
