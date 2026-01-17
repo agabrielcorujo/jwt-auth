@@ -29,6 +29,9 @@ from jwt_auth.user_auth import (
     LoginRequest,
     RegisterRequest,
     create_user,
+    UserAlreadyExistsError,
+    DatabaseOperationError,
+    InvalidCredentialsError
 )
 
 from jwt_auth.redis_server.client import cache
@@ -73,10 +76,17 @@ def login(credentials: LoginRequest, response: Response):
     Raises:
         HTTPException: 401 if credentials are invalid
     """
-    user = check_user_by_email(credentials.email)
+    try:
+        user = check_user_by_email(credentials.email)
 
-    if not user or not verify_password(credentials.password, user["pass_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        if not user or not verify_password(credentials.password, user["pass_hash"]):
+            raise InvalidCredentialsError()
+        
+    except InvalidCredentialsError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
 
     access_token = create_access_token(user["id"])
     refresh_token = create_refresh_token()
@@ -124,12 +134,19 @@ def register(credentials: RegisterRequest):
     Raises:
         HTTPException: 409 if the user already exists
     """
-    result = create_user(credentials)
-
-    if not result["created"]:
+    try: 
+        result = create_user(credentials)
+    
+    except UserAlreadyExistsError:
         raise HTTPException(
             status_code=409,
-            detail="User already exists"
+            detail="Email already registered"
+        )
+    
+    except DatabaseOperationError:
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
         )
 
     return {"status": "user created"}
@@ -188,12 +205,12 @@ def refresh(refresh_token: str = Cookie(None)):
             - 401 if refresh token is invalid or expired
     """
     if not refresh_token:
-        raise HTTPException(status_code=401, detail="Missing refresh token")
+        raise HTTPException(status_code=401, detail="Authentication required")
 
     user_id = get_id_from_token(cache, refresh_token)
 
     if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
+        raise HTTPException(status_code=401, detail="Authentication required")
 
     access_token = create_access_token(user_id)
 
