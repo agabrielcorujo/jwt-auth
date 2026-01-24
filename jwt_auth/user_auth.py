@@ -60,6 +60,7 @@ class RegisterRequest(BaseModel):
         last_name (str): User's last name
     """
     email: str
+    phone: str
     password: str
     first_name: str
     last_name: str
@@ -136,18 +137,20 @@ def check_user_by_email(email: str) -> dict | None:
             - None if no user exists with the given email
     """
     result = safe_query(
-        "SELECT * FROM users WHERE email = %s",
+        "SELECT id,email,password_hash,first_name,last_name,phone,role FROM users WHERE email = %s",
         (email,),
         fetch="one"
     )
 
     if result:
         user = {
+            "id": result[0],
             "email": result[1],
             "pass_hash": result[2],
             "first_name": result[3],
             "last_name": result[4],
-            "id": result[0],
+            "phone":result[5],
+            "role":result[6]
         }
         return user
 
@@ -176,12 +179,14 @@ def create_user(credentials: RegisterRequest) -> dict:
     query = """
     INSERT INTO users (
     email,
+    phone,
     password_hash,
     first_name,
     last_name,
-    created_at
+    created_at,
+    role
     )
-    VALUES (%s, %s, %s, %s, NOW())
+    VALUES (%s, %s, %s, %s, %s, NOW(),'client')
     ON CONFLICT (email) DO NOTHING
     RETURNING id;
     """
@@ -192,6 +197,7 @@ def create_user(credentials: RegisterRequest) -> dict:
             query,
             (
                 credentials.email,
+                credentials.phone,
                 hash_password(credentials.password),
                 credentials.first_name,
                 credentials.last_name,
