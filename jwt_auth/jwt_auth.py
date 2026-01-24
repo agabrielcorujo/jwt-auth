@@ -120,14 +120,23 @@ def decode_access_token(token: str) -> str:
         )
   
     except jwt.ExpiredSignatureError:
-        raise AccessTokenExpiredError("Access token expired")
+        raise HTTPException(
+            status_code=401,
+            detail="Expired access token"
+        )
 
     except jwt.InvalidTokenError:
-        raise InvalidAccessTokenError("Invalid access token")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid access token"
+        )
 
     user_id = payload.get("sub")
     if not user_id:
-        raise InvalidAccessTokenError("Access token missing subject")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid access token"
+        )
 
     return user_id
 
