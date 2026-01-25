@@ -217,7 +217,7 @@ def refresh(refresh_token: str = Cookie(None)):
     if not user_id or not role:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    access_token = create_access_token(user_id,role)
+    access_token = create_access_token(user_id,role[0])
 
     return {
         "access_token": access_token,
