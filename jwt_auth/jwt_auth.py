@@ -92,7 +92,7 @@ def create_access_token(user_id: str,role:str) -> str:
     return jwt.encode(payload, JWT_KEY, algorithm="HS256")
 
 
-def decode_access_token(token: str,id:bool = True,role:bool = False) -> str:
+def decode_access_token(token: str,role:bool = False) -> str:
     """
     Decode and validate a JWT access token.
 
@@ -139,10 +139,10 @@ def decode_access_token(token: str,id:bool = True,role:bool = False) -> str:
             status_code=401,
             detail="Invalid access token"
         )
-    if id:
-        return user_id
     if role:
         return user_role
+        
+    return user_id
 
 # ------------------------------------------------------------------------------
 # Refresh token helpers
