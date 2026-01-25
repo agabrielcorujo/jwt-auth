@@ -212,12 +212,12 @@ def refresh(refresh_token: str = Cookie(None)):
 
     user_id = get_id_from_token(cache, refresh_token)
 
-    role = safe_query("SELECT role FROM users where user_id = %s")
+    role = safe_query("SELECT role FROM users where id = %s",(user_id,),fetch="one")
 
-    if not user_id:
+    if not user_id or not role:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    access_token = create_access_token(user_id)
+    access_token = create_access_token(user_id,role)
 
     return {
         "access_token": access_token,
