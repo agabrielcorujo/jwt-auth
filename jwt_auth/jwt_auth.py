@@ -65,7 +65,7 @@ REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 14
 # Access token helpers
 # ------------------------------------------------------------------------------
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str,role:str) -> str:
     """
     Create a signed JWT access token for a user.
 
@@ -83,6 +83,7 @@ def create_access_token(user_id: str) -> str:
     """
     payload: Dict = {
         "sub": user_id,
+        "role":role,
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         "type": "access"
@@ -91,7 +92,7 @@ def create_access_token(user_id: str) -> str:
     return jwt.encode(payload, JWT_KEY, algorithm="HS256")
 
 
-def decode_access_token(token: str) -> str:
+def decode_access_token(token: str,id:bool = True,role:bool = False) -> str:
     """
     Decode and validate a JWT access token.
 
@@ -132,13 +133,16 @@ def decode_access_token(token: str) -> str:
         )
 
     user_id = payload.get("sub")
+    user_role = payload.get("role")
     if not user_id:
         raise HTTPException(
             status_code=401,
             detail="Invalid access token"
         )
-
-    return user_id
+    if id:
+        return user_id
+    if role:
+        return user_role
 
 # ------------------------------------------------------------------------------
 # Refresh token helpers

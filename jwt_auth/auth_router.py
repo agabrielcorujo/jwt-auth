@@ -36,6 +36,8 @@ from jwt_auth.user_auth import (
 
 from jwt_auth.redis_server.client import cache
 
+from jwt_auth.db import safe_query
+
 
 # ------------------------------------------------------------------------------
 # Router configuration
@@ -88,7 +90,7 @@ def login(credentials: LoginRequest, response: Response):
             detail="Invalid email or password"
         )
 
-    access_token = create_access_token(user["id"])
+    access_token = create_access_token(user["id"],user["role"])
     refresh_token = create_refresh_token()
 
     store_refresh_token(cache, refresh_token, user["id"])
@@ -209,6 +211,8 @@ def refresh(refresh_token: str = Cookie(None)):
         raise HTTPException(status_code=401, detail="Authentication required")
 
     user_id = get_id_from_token(cache, refresh_token)
+
+    role = safe_query("SELECT role FROM users where user_id = %s")
 
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")

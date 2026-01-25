@@ -48,7 +48,6 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-
 class RegisterRequest(BaseModel):
     """
     Schema for user registration requests.
