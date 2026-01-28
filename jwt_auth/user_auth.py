@@ -63,6 +63,10 @@ class RegisterRequest(BaseModel):
     password: str
     first_name: str
     last_name: str
+    city: str
+    street: str
+    state: str
+    zip_code: str
 
 class AuthValidationError(Exception):
     """Raised when auth input is invalid."""
@@ -183,9 +187,13 @@ def create_user(credentials: RegisterRequest) -> dict:
     first_name,
     last_name,
     created_at,
-    role
+    role,
+    street,
+    city,
+    state,
+    zip_code
     )
-    VALUES (%s, %s, %s, %s, %s, NOW(),'client')
+    VALUES (%s, %s, %s, %s, %s, NOW(),'client',%s,%s,%s,%s)
     ON CONFLICT (email) DO NOTHING
     RETURNING id;
     """
@@ -200,6 +208,10 @@ def create_user(credentials: RegisterRequest) -> dict:
                 hash_password(credentials.password),
                 credentials.first_name,
                 credentials.last_name,
+                credentials.steet,
+                credentials.city,
+                credentials.state,
+                credentials.zip_code,
             ),
             fetch="one",
             insert=True
