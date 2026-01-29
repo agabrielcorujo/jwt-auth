@@ -208,7 +208,7 @@ def create_user(credentials: RegisterRequest) -> dict:
                 hash_password(credentials.password),
                 credentials.first_name,
                 credentials.last_name,
-                credentials.steet,
+                credentials.street,
                 credentials.city,
                 credentials.state,
                 credentials.zip_code,
