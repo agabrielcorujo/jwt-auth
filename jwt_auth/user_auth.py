@@ -13,8 +13,9 @@ helper to ensure pooled connections and parameterized queries.
 """
 
 from passlib.context import CryptContext
+from typing import Optional
 from jwt_auth.db import safe_query
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ------------------------------------------------------------------------------
@@ -49,24 +50,16 @@ class LoginRequest(BaseModel):
     password: str
 
 class RegisterRequest(BaseModel):
-    """
-    Schema for user registration requests.
-
-    Attributes:
-        email (str): User email address
-        password (str): Plaintext password to be hashed and stored
-        first_name (str): User's first name
-        last_name (str): User's last name
-    """
     email: str
-    phone: str
     password: str
-    first_name: str
-    last_name: str
-    city: str
-    street: str
-    state: str
-    zip_code: str
+
+    phone: Optional[str] = Field(default="n/a")
+    first_name: Optional[str] = Field(default="n/a")
+    last_name: Optional[str] = Field(default="n/a")
+    city: Optional[str] = Field(default="n/a")
+    street: Optional[str] = Field(default="n/a")
+    state: Optional[str] = Field(default="n/a")
+    zip_code: Optional[str] = Field(default="n/a")
 
 class AuthValidationError(Exception):
     """Raised when auth input is invalid."""
