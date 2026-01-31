@@ -101,8 +101,8 @@ def login(credentials: LoginRequest, response: Response):
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="strict",
-        path="/auth"
+        samesite="none",
+        path="/"
     )
 
     return {
