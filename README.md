@@ -76,22 +76,34 @@ Your PostgreSQL database **must** contain a `users` table with the following sch
 
 ```sql
 CREATE TABLE users (
-    user_id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    phone TEXT NOT NULL,
+    role TEXT NOT NULL,
+    city TEXT NOT NULL,
+    street TEXT NOT NULL,
+    state TEXT NOT NULL,
+    zip_code TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 ```
 
 Required columns (in this order):
-- `user_id` - Primary key (auto-incrementing)
-- `email` - Unique user email
-- `password_hash` - Hashed password (never plaintext)
-- `first_name` - User's first name
-- `last_name` - User's last name
-- `created_at` - Account creation timestamp
+- id – Primary key (UUID, auto-generated with gen_random_uuid())
+- email – Unique user email
+- password_hash – Hashed password (never plaintext)
+- first_name – User’s first name
+- last_name – User’s last name
+- phone – User’s phone number
+- role – Application role (e.g. user, admin)
+- city – City 
+- street – Street address 
+- state – State 
+- zip_code – ZIP / postal code
+- created_at – Account creation timestamp
 
 ---
 
