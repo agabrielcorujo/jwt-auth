@@ -25,10 +25,7 @@ class Cache:
         - Reads REDIS_URL from environment variables
         - Falls back to Docker default if not set
         """
-        self.REDIS_URL = os.getenv(
-            "REDIS_URL",
-            "redis://redis:6379"  # default for docker-compose
-        )
+        self.REDIS_URL = os.getenv("REDIS_URL") or "redis://redis:6379"
 
         self.redis_client = redis.Redis.from_url(
             self.REDIS_URL,
