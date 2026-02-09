@@ -29,7 +29,9 @@ class Cache:
 
         self.redis_client = redis.Redis.from_url(
             self.REDIS_URL,
-            decode_responses=True
+            decode_responses=True,
+            ssl=True,
+            ssl_cert_reqs=None
         )
 
         # Optional: fail fast if Redis is unreachable
