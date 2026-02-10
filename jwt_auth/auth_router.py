@@ -101,7 +101,7 @@ def login(credentials: LoginRequest, response: Response):
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="none",
+        samesite="lax",
         path="/",
         domain=".offclutterstorage.com"
     )
