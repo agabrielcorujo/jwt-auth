@@ -102,7 +102,8 @@ def login(credentials: LoginRequest, response: Response):
         httponly=True,
         secure=True,
         samesite="none",
-        path="/"
+        path="/",
+        domain=".offclutterstorage.com"
     )
 
     return {
