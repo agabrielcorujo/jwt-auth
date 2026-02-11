@@ -239,7 +239,7 @@ def change_password_request(email:str,):
     if not user:
         return {}
 
-    phone = f"+1{user["phone"]}"
+    phone = f'+1{user["phone"]}'
 
     code = random.randint(1000,10000)
 
