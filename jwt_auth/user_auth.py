@@ -19,7 +19,7 @@ from pydantic import BaseModel, EmailStr, Field
 from twilio.rest import Client
 import os
 import random
-from redis_server.client import cache
+from jwt_auth.redis_server.client import cache
 
 # ------------------------------------------------------------------------------
 # Password hashing configuration
