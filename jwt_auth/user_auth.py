@@ -16,7 +16,10 @@ from passlib.context import CryptContext
 from typing import Optional
 from jwt_auth.db import safe_query
 from pydantic import BaseModel, EmailStr, Field
-
+from twilio.rest import Client
+import os
+import random
+from redis_server.client import cache
 
 # ------------------------------------------------------------------------------
 # Password hashing configuration
@@ -72,7 +75,14 @@ class DatabaseOperationError(Exception):
 
 class InvalidCredentialsError(Exception):
     """Raised when login credentials are invalid."""
-    
+
+class PasswordChangeRequest(BaseModel):
+    email:EmailStr
+
+class PasswordChangeRequestVerify(BaseModel):
+    email:EmailStr
+    code:str
+    password:str    
 # ------------------------------------------------------------------------------
 # Password utilities
 # ------------------------------------------------------------------------------
@@ -221,4 +231,62 @@ def create_user(credentials: RegisterRequest) -> dict:
         "created": True,
         "user_id": row[0],
     }
+
+def change_password_request(email:str,):
+
+    user = check_user_by_email(email)
+
+    if not user:
+        return {}
+
+    phone = f"+1{user["phone"]}"
+
+    code = random.randint(1000,10000)
+
+    client = Client(
+        os.getenv("TWILIO_ACCOUNT_SID"),
+        os.getenv("TWILIO_AUTH_TOKEN")
+    )
+
+    try:
+        client.messages.create(
+            body=f"{code} is your OffClutter Storage code.",
+            from_=os.getenv("TWILIO_PHONE"),
+            to=phone
+        )
+        cache.setex(f"{email}:pass_reset_code",120,code)
+
+    except Exception as e:
+        return {}
+
+    return {
+        "status":"sent"
+    }
+
+def validate_password_change_request(code:str,email:str,password:str):
+    
+    cached_code = cache.get(f"{email}:pass_reset_code")
+
+    if not cached_code or cached_code != code:
+        return {}
+    
+    pass_hash = hash_password(password)
+
+    query = "UPDATE users SET password_hash = %s WHERE email = %s RETURNING id"
+
+    result = safe_query(query,(pass_hash,email),insert=True,fetch="one")
+
+    if not result:
+        return {}
+
+    return {"status":"password_changed"}
+
+
+
+    
+
+
+    
+
+    
 

@@ -31,7 +31,11 @@ from jwt_auth.user_auth import (
     create_user,
     UserAlreadyExistsError,
     DatabaseOperationError,
-    InvalidCredentialsError
+    InvalidCredentialsError,
+    PasswordChangeRequest,
+    PasswordChangeRequestVerify,
+    change_password_request,
+    validate_password_change_request
 )
 
 from jwt_auth.redis_server.client import cache
@@ -224,3 +228,13 @@ def refresh(refresh_token: str = Cookie(None)):
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@router.patch("/password-reset-request")
+def reset_pass_request(request:PasswordChangeRequest):
+
+    return change_password_request(request.email)
+
+@router.patch("/validate-password-reset-request")
+def validate_pass_request(request:PasswordChangeRequestVerify):
+
+    return validate_password_change_request(request.code,request.email,request.password)
