@@ -2,6 +2,7 @@ from fastapi import HTTPException
 import jwt_auth.services.auth_services as services
 import jwt_auth.schemas.auth_schema as schema
 from fastapi import Response
+import os 
 
 def login_controller(credentials:schema.LoginRequest,response: Response):
 
@@ -33,8 +34,8 @@ def login_controller(credentials:schema.LoginRequest,response: Response):
         httponly=True,
         secure=True,
         samesite="lax",
-        path="/auth/refresh",
-        domain=".offclutterstorage.com"
+        path="/auth",
+        domain=os.getenv("DOMAIN")
     )
 
     return {
