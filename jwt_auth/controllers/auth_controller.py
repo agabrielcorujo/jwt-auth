@@ -65,7 +65,11 @@ def logout_controller(response: Response,refresh_token: str):
 
         services.remove_from_cache(f"refresh:{refresh_token}")
 
-        response.delete_cookie("refresh_token")
+        response.delete_cookie(
+            "refresh_token",
+            path="/auth",
+            domain=os.getenv("DOMAIN")   
+        )
 
     return {"status": "logged out"}
 
