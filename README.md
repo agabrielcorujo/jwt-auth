@@ -165,7 +165,7 @@ Cookie domain (optional):
 DOMAIN=.{your domain}.com or whatever
 ```
 
-Twilio (required for password reset SMS endpoints):
+Twilio (optional, password reset SMS endpoints):
 
 ```env
 TWILIO_ACCOUNT_SID=...
