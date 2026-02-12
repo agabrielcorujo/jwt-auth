@@ -14,7 +14,7 @@ class LoginRequest(BaseModel):
     password: str
 
 class RegisterRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
     phone: Optional[str] = Field(default="n/a")
