@@ -165,6 +165,9 @@ def create_user(email,phone,password,firstname,lastname,street,city,state,zipcod
 
 def change_password_request(email:str) -> dict:
 
+    if not os.getenv("TWILIO_ACCOUNT_SID") or not os.getenv("TWILIO_AUTH_TOKEN"):
+        return{}
+
     user = check_user_by_email(email)
 
     if not user:
@@ -196,6 +199,9 @@ def change_password_request(email:str) -> dict:
     }
 
 def validate_password_change_request(code:str,email:str,password:str):
+
+    if not os.getenv("TWILIO_ACCOUNT_SID") or not os.getenv("TWILIO_AUTH_TOKEN"):
+        return{}
     
     cached_code = cache.get(f"{email}:pass_reset_code")
 
