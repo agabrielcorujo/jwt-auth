@@ -1,7 +1,7 @@
 
 import os
 import redis
-from jwt_auth.db.db import DBError,logger
+from jwt_auth.db.db import logger
 
 
 class Cache:
@@ -22,14 +22,14 @@ class Cache:
             )
         except Exception as e:
             logger.error(f"Invalid REDIS_URL:{str(e)}")
-            raise DBError("Server Configuration Error",500)
+            raise RuntimeError("Server Configuration Error")
 
         # Optional: fail fast if Redis is unreachable
         try:
             self.redis_client.ping()
         except Exception as e:
             logger.error(f"Unable to reach redis:{str(e)}")
-            raise DBError("Server Configuration Error",500)
+            raise RuntimeError("Server Configuration Error")
 
 
 # ----------------------------------------------------------------------
