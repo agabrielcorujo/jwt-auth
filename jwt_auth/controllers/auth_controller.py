@@ -1,7 +1,6 @@
-from fastapi import HTTPException
+from fastapi import HTTPException,Response
 import jwt_auth.services.auth_services as services
 import jwt_auth.schemas.auth_schema as schema
-from fastapi import Response
 import os 
 
 def login_controller(credentials:schema.LoginRequest,response: Response):
@@ -96,3 +95,17 @@ def reset_pass_request_controller(request:schema.PasswordChangeRequest):
 def validate_password_change_request_controller(request:schema.PasswordChangeRequestVerify):
 
     return services.validate_password_change_request(request.code,request.email,request.password)
+
+def decode_access_token_controller(access_token:str):
+
+    try:
+        result = services.decode_access_token(access_token)
+
+    except services.AuthError as error:
+
+        raise HTTPException(
+            status_code=error.status_code,
+            detail=error.message
+        )
+
+    return result
