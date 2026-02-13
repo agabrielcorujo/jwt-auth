@@ -96,10 +96,10 @@ def validate_password_change_request_controller(request:schema.PasswordChangeReq
 
     return services.validate_password_change_request(request.code,request.email,request.password)
 
-def decode_access_token_controller(access_token:str):
+def decode_access_token_controller(access_token:str,role:bool=False):
 
     try:
-        result = services.decode_access_token(access_token)
+        result = services.decode_access_token(access_token,role)
 
     except services.AuthError as error:
 
