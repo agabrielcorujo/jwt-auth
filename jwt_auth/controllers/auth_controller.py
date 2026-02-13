@@ -32,7 +32,7 @@ def login_controller(credentials:schema.LoginRequest,response: Response):
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         path="/auth",
         domain=os.getenv("DOMAIN")
     )
