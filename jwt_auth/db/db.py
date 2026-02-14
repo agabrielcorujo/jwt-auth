@@ -67,7 +67,7 @@ def safe_query(query: str,params: list | tuple = None,fetch: str = None,insert: 
 
         logger.error(f"Error in query execution: {str(e)}")
         
-        raise DBError("Server configuration error",500)
+        raise DBError("Error in query execution",500)
 
     finally:
         if cur:
