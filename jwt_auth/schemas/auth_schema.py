@@ -17,13 +17,13 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
 
-    phone: Optional[str] = Field(default="n/a")
-    first_name: Optional[str] = Field(default="n/a")
-    last_name: Optional[str] = Field(default="n/a")
-    city: Optional[str] = Field(default="n/a")
-    street: Optional[str] = Field(default="n/a")
-    state: Optional[str] = Field(default="n/a")
-    zip_code: Optional[str] = Field(default="n/a")
+    phone: Optional[str] = Field(default="")
+    first_name: Optional[str] = Field(default="")
+    last_name: Optional[str] = Field(default="")
+    city: Optional[str] = Field(default="")
+    street: Optional[str] = Field(default="")
+    state: Optional[str] = Field(default="")
+    zip_code: Optional[str] = Field(default="")
 
 class PasswordChangeRequest(BaseModel):
     email:EmailStr
