@@ -24,6 +24,13 @@ class RegisterRequest(BaseModel):
     street: Optional[str] = Field(default="")
     state: Optional[str] = Field(default="")
     zip_code: Optional[str] = Field(default="")
+    
+    @field_validator("phone")
+    @classmethod
+    def clean_phone(cls, v):
+        if not v:
+            return v
+        return re.sub(r"\D", "", v)
 
 class PasswordChangeRequest(BaseModel):
     email:EmailStr
