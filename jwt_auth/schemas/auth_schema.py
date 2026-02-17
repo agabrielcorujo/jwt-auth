@@ -31,7 +31,14 @@ class RegisterRequest(BaseModel):
     def clean_phone(cls, v):
         if not v:
             return v
-        return re.sub(r"\D", "", v)
+            
+        digits = re.sub(r"\D", "", v)
+
+        # Remove leading 1 if it's a US number (11 digits total)
+        if len(digits) == 11 and digits.startswith("1"):
+            digits = digits[1:]
+
+        return digits
 
 class PasswordChangeRequest(BaseModel):
     email:EmailStr
