@@ -155,6 +155,9 @@ Redis:
 
 ```env
 REDIS_URL={redis url from whatever hosted provider you are using (not docker)}
+# Optional TLS controls for rediss:// URLs:
+# REDIS_SSL_CA_CERTS=/path/to/ca-bundle.pem
+# REDIS_SSL_CERT_REQS=required  # or "none" for local debugging only
 ```
 
 If `REDIS_URL` is missing (eg you are using docker), code defaults to `redis://redis:6379`.
@@ -175,9 +178,9 @@ TWILIO_PHONE=...
 
 ## Important Runtime Notes
 
-- DB pool is initialized at import time in `jwt_auth/db/db.py`.
-- Redis client is initialized at import time in `jwt_auth/db/redis.py`.
-- If DB env vars are missing, DB connection fails, or Redis is unreachable, imports that depend on these modules will fail early.
+- DB pool is **not** initialized at import time. Call `await init_pool()` on app startup.
+- Redis client object is created at import time; call `await init_cache()` on app startup to verify connectivity.
+- `example_app.py` uses FastAPI lifespan to initialize and close both DB and Redis connections.
 
 ## Database Schema Requirements
 
@@ -213,4 +216,3 @@ Required columns (in this order):
 - state - State
 - zip_code - ZIP / postal code
 - created_at - Account creation timestamp
-

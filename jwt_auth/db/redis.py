@@ -1,35 +1,55 @@
-
+import logging
 import os
-import redis
-from jwt_auth.db.db import logger
+
+import certifi
+import redis.asyncio as redis
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+logger = logging.getLogger(__name__)
 
 
 class Cache:
 
     def __init__(self) -> None:
 
-        Url = os.getenv("REDIS_URL")
+        url = os.getenv("REDIS_URL")
 
-        if not Url:
+        if not url:
             logger.warning("Missing REDIS_URL, defaulted to local redis.")
 
-        self.REDIS_URL = Url or "redis://redis:6379"
+        self.REDIS_URL = url or "redis://redis:6379"
+        redis_kwargs = {"decode_responses": True}
 
-        try: 
-            self.redis_client = redis.Redis.from_url(
+        if self.REDIS_URL.startswith("rediss://"):
+            # Keep TLS verification strict by default; allow explicit override for local troubleshooting.
+            ssl_cert_reqs = os.getenv("REDIS_SSL_CERT_REQS", "required")
+            redis_kwargs["ssl_cert_reqs"] = ssl_cert_reqs
+
+            if ssl_cert_reqs.lower() != "none":
+                redis_kwargs["ssl_ca_certs"] = os.getenv("REDIS_SSL_CA_CERTS", certifi.where())
+
+        try:
+            self.redis_client = redis.from_url(
                 self.REDIS_URL,
-                decode_responses=True
+                **redis_kwargs
             )
         except Exception as e:
-            logger.error(f"Invalid REDIS_URL:{str(e)}")
-            raise RuntimeError("Server Configuration Error")
+            logger.error(f"Invalid REDIS_URL: {str(e)}")
+            raise RuntimeError("Server Configuration Error") from e
 
-        # Optional: fail fast if Redis is unreachable
+    async def connect(self):
+
         try:
-            self.redis_client.ping()
+            await self.redis_client.ping()
         except Exception as e:
-            logger.error(f"Unable to reach redis:{str(e)}")
-            raise RuntimeError("Server Configuration Error")
+            logger.error(f"Unable to reach redis: {str(e)}")
+            raise RuntimeError("Server Configuration Error") from e
+
+    async def close(self):
+        await self.redis_client.aclose()
 
 
 # ----------------------------------------------------------------------
@@ -37,5 +57,12 @@ class Cache:
 # ----------------------------------------------------------------------
 
 cache_obj = Cache()
-
 cache = cache_obj.redis_client
+
+
+async def init_cache():
+    await cache_obj.connect()
+
+
+async def close_cache():
+    await cache_obj.close()
