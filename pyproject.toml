@@ -34,6 +34,7 @@ dependencies = [
     "PyJWT==2.10.1",
     "python-dotenv==1.2.1",
     "redis==7.1.0",
+    resend==2.23.0,
     "starlette==0.50.0",
     "twilio==9.10.1",
     "typing-inspection==0.4.2",
