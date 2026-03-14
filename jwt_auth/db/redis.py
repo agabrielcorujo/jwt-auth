@@ -3,10 +3,6 @@ import os
 
 import certifi
 import redis.asyncio as redis
-from dotenv import load_dotenv
-
-load_dotenv()
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +16,7 @@ class Cache:
         if not url:
             logger.warning("Missing REDIS_URL, defaulted to local redis.")
 
-        self.REDIS_URL = url or "redis://redis:6379"
+        self.REDIS_URL = url 
         redis_kwargs = {"decode_responses": True}
 
         if self.REDIS_URL.startswith("rediss://"):

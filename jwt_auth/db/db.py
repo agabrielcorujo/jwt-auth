@@ -3,9 +3,6 @@ import os
 import uuid
 
 import asyncpg
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class DBError(Exception):
     def __init__(self, message: str, status_code: int):
