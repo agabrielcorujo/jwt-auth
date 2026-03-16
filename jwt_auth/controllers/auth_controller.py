@@ -129,7 +129,7 @@ async def validate_password_change_request_controller(request: schema.PasswordCh
         )
 
 
-async def decode_access_token_controller(access_token: str, role: bool = False):
+def decode_access_token_controller(access_token: str, role: bool = False):
 
     try:
         result = services.decode_access_token(access_token, role)
