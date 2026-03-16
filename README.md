@@ -74,7 +74,7 @@ app.include_router(auth_router)
 If you need to decode bearer tokens directly:
 
 ```python
-from jwt_auth.services.auth_services import decode_access_token
+from jwt_auth.controllers.auth_controller import decode_access_token_controller as decode_access_token
 ```
 
 ## Async Behavior
