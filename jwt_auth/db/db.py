@@ -1,7 +1,7 @@
 import logging
 import os
 import uuid
-
+import asyncio
 import asyncpg
 
 class DBError(Exception):
@@ -100,3 +100,40 @@ async def safe_query(query, params=None, fetch=None):
     except Exception as e:
         logger.error(f"Error in query execution: {str(e)}")
         raise DBError("Server configuration error", 500)
+
+async def create_users_table():
+    query = """
+        CREATE TABLE IF NOT EXISTS users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            first_name TEXT,
+            last_name TEXT,
+            phone TEXT,
+            street TEXT,
+            city TEXT,
+            state TEXT,
+            zip_code TEXT,
+            role TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT now()
+        );
+    """
+
+    try:
+        await safe_query(query)
+
+    except Exception as e:
+        logger.error(str(e))
+        raise DBError("Error creating users table", 500)
+
+    print("users table created successfully") 
+
+async def main():
+    await init_pool()
+    try:
+        await create_users_table()
+    finally:
+        await close_pool()
+
+if __name__ == "__main__":
+    asyncio.run(main())
