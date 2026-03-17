@@ -6,17 +6,27 @@ import os
 
 async def login_controller(credentials: schema.LoginRequest, response: Response):
 
-
     try:
-
         user = await services.check_user_by_email(credentials.email)
 
         if not user or not services.pwd_context.verify(credentials.password, user["pass_hash"]):
             raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
-        
+                status_code=401,
+                detail="Invalid email or password"
+            )
+
+        if user.get("twofa"):
+
+            if not credentials.twofa:
+                await services.create_twofa_attempt(credentials.email)
+
+                return {
+                    "status": "2fa_required",
+                    "message": "Verification code sent to email"
+                }
+
+            await services.validate_twofa_attempt(credentials.email, credentials.twofa)
+
     except services.AuthError as error:
         raise HTTPException(
             status_code=error.status_code,
@@ -28,7 +38,6 @@ async def login_controller(credentials: schema.LoginRequest, response: Response)
 
     await services.store_refresh_token(refresh_token, user["id"])
 
-    # Store refresh token as an HttpOnly cookie to prevent JS access
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
@@ -47,7 +56,6 @@ async def login_controller(credentials: schema.LoginRequest, response: Response)
         "status": "logged in"
     }
 
-
 async def register_controller(request: schema.RegisterRequest):
 
     try:
@@ -60,7 +68,8 @@ async def register_controller(request: schema.RegisterRequest):
             request.street,
             request.city,
             request.state,
-            request.zip_code
+            request.zip_code,
+            request.twofa
         )
     
     except services.AuthError as error:

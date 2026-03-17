@@ -89,7 +89,7 @@ async def store_refresh_token(refresh_token: str, user_id: str) -> None:
 
 
 async def check_user_by_email(email: str) -> dict | None:
-    query = "SELECT id, email, password_hash, first_name, last_name, phone, role FROM users WHERE email = $1"
+    query = "SELECT id, email, password_hash, first_name, last_name, phone, role, twofa FROM users WHERE email = $1"
 
     try:
         result = await safe_query(query, (email,), fetch="one")
@@ -108,11 +108,12 @@ async def check_user_by_email(email: str) -> dict | None:
         "last_name": result[4],
         "phone": result[5],
         "role": result[6],
+        "twofa":result[7],
     }
 
     return user
 
-async def create_user(email, phone, password, firstname, lastname, street, city, state, zipcode):
+async def create_user(email, phone, password, firstname, lastname, street, city, state, zipcode,twofa):
 
     query = """
                 INSERT INTO users (
@@ -126,9 +127,10 @@ async def create_user(email, phone, password, firstname, lastname, street, city,
                 street,
                 city,
                 state,
-                zip_code
+                zip_code,
+                twofa
                 )
-                VALUES ($1, $2, $3, $4, $5, NOW(), 'client', $6, $7, $8, $9)
+                VALUES ($1, $2, $3, $4, $5, NOW(), 'client', $6, $7, $8, $9,$10)
                 ON CONFLICT (email) DO NOTHING
                 RETURNING id;
                 """
@@ -144,7 +146,8 @@ async def create_user(email, phone, password, firstname, lastname, street, city,
                 street,
                 city,
                 state,
-                zipcode
+                zipcode,
+                twofa
             ),
             fetch="one"
         )
@@ -253,3 +256,58 @@ async def refresh(refresh_token: str):
         "access_token": access_token,
         "token_type": "bearer",
     }
+
+async def create_twofa_attempt(email:str):
+    project = os.getenv("PROJECT_NAME", "Project")
+    code = random.randint(100000, 999999)
+    
+    try:
+
+        await asyncio.to_thread(                                                                                                                                              
+            resend.Emails.send,
+            {
+                "from": os.getenv("RESEND_FROM_EMAIL"),
+                "to": email,
+                "subject": f"{project} 2 Factor Authentication Code",
+                "html": f"""
+                        <h2>2FA</h2>
+                        <p>Your {project} login verification code is:</p>
+                        <h1>{code}</h1>
+                        <p>This code expires in 2 minutes.</p>
+                        """
+            }
+        )
+
+        await cache.setex(f"{email}:twofa_code", 120, str(code))
+
+    except Exception as e:
+        logger.error(f"Error sending twofa code email: {e}")
+        raise AuthError("Unable to send verification code", 500)
+
+    return {"status":"code sent to email"}
+
+async def validate_twofa_attempt(email:str,code:str):
+    cached_code = await cache.get(f"{email}:twofa_code")
+    
+    if not cached_code:
+        raise AuthError(message = "Expired or invalid code entered",status_code = 401)
+
+    if cached_code != code:
+        await cache.delete(f"{email}:twofa_code")
+
+        raise AuthError(message = "Invalid code entered",status_code = 401)
+
+    await cache.delete(f"{email}:twofa_code")
+
+    return {"status":"verified"}
+
+
+
+
+
+
+
+
+
+
+

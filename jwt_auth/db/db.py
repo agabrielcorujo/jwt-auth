@@ -114,13 +114,19 @@ async def create_users_table():
             city TEXT,
             state TEXT,
             zip_code TEXT,
+            twofa BOOLEAN NOT NULL DEFAULT FALSE,
             role TEXT,
             created_at TIMESTAMP NOT NULL DEFAULT now()
         );
     """
+    add_twofa_column_query = """
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS twofa BOOLEAN NOT NULL DEFAULT FALSE;
+    """
 
     try:
         await safe_query(query)
+        await safe_query(add_twofa_column_query)
 
     except Exception as e:
         logger.error(str(e))
