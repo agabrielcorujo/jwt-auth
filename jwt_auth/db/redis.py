@@ -16,21 +16,12 @@ class Cache:
         if not url:
             logger.warning("Missing REDIS_URL, defaulted to local redis.")
 
-        self.REDIS_URL = url 
-        redis_kwargs = {"decode_responses": True}
-
-        if self.REDIS_URL.startswith("rediss://"):
-            # Keep TLS verification strict by default; allow explicit override for local troubleshooting.
-            ssl_cert_reqs = os.getenv("REDIS_SSL_CERT_REQS", "required")
-            redis_kwargs["ssl_cert_reqs"] = ssl_cert_reqs
-
-            if ssl_cert_reqs.lower() != "none":
-                redis_kwargs["ssl_ca_certs"] = os.getenv("REDIS_SSL_CA_CERTS", certifi.where())
+        self.REDIS_URL = url
 
         try:
             self.redis_client = redis.from_url(
                 self.REDIS_URL,
-                **redis_kwargs
+                decode_responses=True
             )
         except Exception as e:
             logger.error(f"Invalid REDIS_URL: {str(e)}")
