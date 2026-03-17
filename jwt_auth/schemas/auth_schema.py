@@ -13,6 +13,7 @@ class LoginRequest(BaseModel):
     """
     email: EmailStr
     password: str
+    twofa: Optional[str] = None
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -25,7 +26,8 @@ class RegisterRequest(BaseModel):
     street: Optional[str] = Field(default="")
     state: Optional[str] = Field(default="")
     zip_code: Optional[str] = Field(default="")
-    
+    twofa: Optional[bool] = Field(default=False)
+
     @field_validator("phone")
     @classmethod
     def clean_phone(cls, v):
