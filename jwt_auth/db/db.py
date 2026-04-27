@@ -4,7 +4,7 @@ import uuid
 import asyncio
 import asyncpg
 import json as j
-from db.redis import cache
+from jwt_auth.db.redis import cache
 
 class DBError(Exception):
     def __init__(self, message: str, status_code: int):
