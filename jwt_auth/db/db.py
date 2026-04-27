@@ -4,7 +4,7 @@ import uuid
 import asyncio
 import asyncpg
 import json as j
-from redis import cache
+from db.redis import cache
 
 class DBError(Exception):
     def __init__(self, message: str, status_code: int):
@@ -84,7 +84,7 @@ async def safe_query(query, params=None, fetch=None):
 
     cached_results = None
     try:
-        raw = cache.get(key)
+        raw = await cache.get(key)
         if raw is not None:
             cached_results = j.loads(raw)
     except Exception as e:
@@ -104,7 +104,7 @@ async def safe_query(query, params=None, fetch=None):
                             return None
 
                         row = [v for _, v in db_row.items()]
-                        cache.setex(key, 86400, j.dumps(row))
+                        await cache.setex(key, 86400, j.dumps(row))
 
                     return _coerce_row(row)
 
@@ -115,7 +115,7 @@ async def safe_query(query, params=None, fetch=None):
                     else:
                         db_rows = await conn.fetch(query, *query_params)
                         rows = [[v for _, v in r.items()] for r in db_rows]
-                        cache.setex(key, 86400, j.dumps(rows))
+                        await cache.setex(key, 86400, j.dumps(rows))
 
                     return [_coerce_row(r) for r in rows]
 
