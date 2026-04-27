@@ -3,6 +3,8 @@ import os
 import uuid
 import asyncio
 import asyncpg
+import json as j
+from redis import cache
 
 class DBError(Exception):
     def __init__(self, message: str, status_code: int):
@@ -68,30 +70,56 @@ async def close_pool():
 
 
 def _coerce_row(row):
+
     return tuple(str(v) if isinstance(v, uuid.UUID) else v for v in row)
 
 
 async def safe_query(query, params=None, fetch=None):
     if pool is None:
-        logger.error("Database pool is not initialized. Call init_pool() on startup.")
+        logger.error("Database pool is not initialized.")
         raise DBError("Server configuration error", 500)
 
     query_params = tuple(params or ())
+    key = f"{query}:{query_params}"
+
+    cached_results = None
+    try:
+        raw = cache.get(key)
+        if raw is not None:
+            cached_results = j.loads(raw)
+    except Exception as e:
+        logger.error(str(e))
 
     try:
         async with pool.acquire() as conn:
             async with conn.transaction():
 
+                # -------- ONE --------
                 if fetch == "one":
-                    row = await conn.fetchrow(query, *query_params)
-                    if row is None:
-                        return None
+                    if cached_results is not None:
+                        row = cached_results  # already list/tuple
+                    else:
+                        db_row = await conn.fetchrow(query, *query_params)
+                        if db_row is None:
+                            return None
+
+                        row = [v for _, v in db_row.items()]
+                        cache.setex(key, 86400, j.dumps(row))
+
                     return _coerce_row(row)
 
+                # -------- ALL --------
                 elif fetch == "all":
-                    rows = await conn.fetch(query, *query_params)
+                    if cached_results is not None:
+                        rows = cached_results
+                    else:
+                        db_rows = await conn.fetch(query, *query_params)
+                        rows = [[v for _, v in r.items()] for r in db_rows]
+                        cache.setex(key, 86400, j.dumps(rows))
+
                     return [_coerce_row(r) for r in rows]
 
+                # -------- EXECUTE --------
                 else:
                     return await conn.execute(query, *query_params)
 
