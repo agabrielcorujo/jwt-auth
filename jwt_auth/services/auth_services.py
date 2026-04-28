@@ -92,7 +92,7 @@ async def check_user_by_email(email: str) -> dict | None:
     query = "SELECT id, email, password_hash, first_name, last_name, phone, role, twofa FROM users WHERE email = $1"
 
     try:
-        result = await safe_query(query, (email,), fetch="one")
+        result = await safe_query(query, (email,), fetch="one",cache_aside=False)
 
     except DBError as error:
         raise AuthError(message=error.message, status_code=error.status_code)
@@ -149,7 +149,8 @@ async def create_user(email, phone, password, firstname, lastname, street, city,
                 zipcode,
                 twofa
             ),
-            fetch="one"
+            fetch="one",
+            cache_aside=False
         )
 
     except DBError as error:
@@ -242,7 +243,7 @@ async def refresh(refresh_token: str):
         raise AuthError("Authentication required", 401)
 
     try:
-        row = await safe_query("SELECT role FROM users WHERE id = $1", (user_id,), fetch="one")
+        row = await safe_query("SELECT role FROM users WHERE id = $1", (user_id,), fetch="one",cache_aside=False)
         if not row:
             raise AuthError("Authentication required", 401)
         role = row[0]
