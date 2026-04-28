@@ -103,7 +103,7 @@ async def safe_query(query, params=None, fetch=None):
                         if db_row is None:
                             return None
 
-                        row = [v for _, v in db_row.items()]
+                        row = [str(v) if isinstance(v, uuid.UUID) else v for _, v in db_row.items()]
                         await cache.setex(key, 86400, j.dumps(row))
 
                     return _coerce_row(row)
@@ -114,7 +114,7 @@ async def safe_query(query, params=None, fetch=None):
                         rows = cached_results
                     else:
                         db_rows = await conn.fetch(query, *query_params)
-                        rows = [[v for _, v in r.items()] for r in db_rows]
+                        rows = [[str(v) if isinstance(v, uuid.UUID) else v for _, v in r.items()] for r in db_rows]
                         await cache.setex(key, 86400, j.dumps(rows))
 
                     return [_coerce_row(r) for r in rows]
