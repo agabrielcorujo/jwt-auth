@@ -87,6 +87,7 @@ async def safe_query(query, params=None, fetch=None):
         raw = await cache.get(key)
         if raw is not None:
             cached_results = j.loads(raw)
+            logger.info("RESULTS RETREIVED FROM CACHE")
     except Exception as e:
         logger.error(str(e))
 
