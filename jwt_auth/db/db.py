@@ -119,7 +119,7 @@ async def safe_query(query, params=None, fetch=None, cache_aside=True):
 
                     if cache_aside:
                         try:
-                            await cache.setex(key, 86400, j.dumps(row))
+                            await cache.setex(key, 2700, j.dumps(row))
                         except Exception as e:
                             logger.error(f"Cache write failed: {e}")
 
@@ -138,7 +138,7 @@ async def safe_query(query, params=None, fetch=None, cache_aside=True):
 
                     if cache_aside:
                         try:
-                            await cache.setex(key, 86400, j.dumps(rows))
+                            await cache.setex(key, 2700, j.dumps(rows))
                         except Exception as e:
                             logger.error(f"Cache write failed: {e}")
 
