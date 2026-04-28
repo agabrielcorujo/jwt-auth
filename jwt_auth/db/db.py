@@ -74,91 +74,84 @@ def _coerce_row(row):
     return tuple(str(v) if isinstance(v, uuid.UUID) else v for v in row)
 
 
-async def safe_query(query, params=None, fetch=None,cache_aside=True):
+async def safe_query(query, params=None, fetch=None, cache_aside=True):
     if pool is None:
         logger.error("Database pool is not initialized.")
         raise DBError("Server configuration error", 500)
 
     query_params = tuple(params or ())
+    key = f"{query}:{query_params}" if cache_aside else None
 
-    if cache_aside:
-        key = f"{query}:{query_params}"
-
+    try:
+        # ---------- TRY CACHE ----------
         cached_results = None
-        try:
-            raw = await cache.get(key)
-            if raw is not None:
-                cached_results = j.loads(raw)
-                logger.info("RESULTS RETREIVED FROM CACHE")
-        except Exception as e:
-            logger.error(str(e))
+        if cache_aside:
+            try:
+                raw = await cache.get(key)
+                if raw is not None:
+                    cached_results = j.loads(raw)
+                    logger.info("RESULTS RETRIEVED FROM CACHE")
+            except Exception as e:
+                logger.error(str(e))
 
-        try:
-            async with pool.acquire() as conn:
-                async with conn.transaction():
+        cache_hit = cached_results is not None
 
-                    # -------- ONE --------
-                    if fetch == "one":
-                        if cached_results is not None:
-                            row = cached_results  # already list/tuple
-                        else:
-                            db_row = await conn.fetchrow(query, *query_params)
-                            if db_row is None:
-                                return None
+        # ---------- EARLY RETURN ON CACHE ----------
+        if fetch == "one" and cache_hit:
+            return _coerce_row(cached_results)
 
-                            row = [str(v) if isinstance(v, uuid.UUID) else v for _, v in db_row.items()]
+        if fetch == "all" and cache_hit:
+            return [_coerce_row(r) for r in cached_results]
+
+        # ---------- DB ----------
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+
+                if fetch == "one":
+                    db_row = await conn.fetchrow(query, *query_params)
+                    if db_row is None:
+                        return None
+
+                    row = [
+                        str(v) if isinstance(v, uuid.UUID) else v
+                        for v in db_row.values()
+                    ]
+
+                    if cache_aside:
+                        try:
                             await cache.setex(key, 86400, j.dumps(row))
+                        except Exception as e:
+                            logger.error(f"Cache write failed: {e}")
 
-                        return _coerce_row(row)
+                    return _coerce_row(row)
 
-                    # -------- ALL --------
-                    elif fetch == "all":
-                        if cached_results is not None:
-                            rows = cached_results
-                        else:
-                            db_rows = await conn.fetch(query, *query_params)
-                            rows = [[str(v) if isinstance(v, uuid.UUID) else v for _, v in r.items()] for r in db_rows]
+                elif fetch == "all":
+                    db_rows = await conn.fetch(query, *query_params)
+
+                    rows = [
+                        [
+                            str(v) if isinstance(v, uuid.UUID) else v
+                            for v in r.values()
+                        ]
+                        for r in db_rows
+                    ]
+
+                    if cache_aside:
+                        try:
                             await cache.setex(key, 86400, j.dumps(rows))
+                        except Exception as e:
+                            logger.error(f"Cache write failed: {e}")
 
-                        return [_coerce_row(r) for r in rows]
+                    return [_coerce_row(r) for r in rows]
 
-                    # -------- EXECUTE --------
-                    else:
-                        return await conn.execute(query, *query_params)
+                else:
+                    return await conn.execute(query, *query_params)
 
-        except DBError:
-            raise
-        except Exception as e:
-            logger.error(f"Error in query execution: {str(e)}")
-            raise DBError("Server configuration error", 500)
-    else:
-
-        try:
-            async with pool.acquire() as conn:
-                async with conn.transaction():
-
-                    # -------- ONE --------
-                    if fetch == "one":
-                        db_row = await conn.fetchrow(query, *query_params)
-                        if db_row is None:
-                            return None
-
-                        return _coerce_row(db_row)
-
-                    # -------- ALL --------
-                    elif fetch == "all":
-                        db_rows = await conn.fetch(query, *query_params)
-                        return [_coerce_row(r) for r in db_rows]
-
-                    # -------- EXECUTE --------
-                    else:
-                        return await conn.execute(query, *query_params)
-
-        except DBError:
-            raise
-        except Exception as e:
-            logger.error(f"Error in query execution: {str(e)}")
-            raise DBError("Server configuration error", 500)
+    except DBError:
+        raise
+    except Exception as e:
+        logger.error(f"Error in query execution: {str(e)}")
+        raise DBError("Server configuration error", 500)
 
 
 async def create_users_table():
