@@ -88,8 +88,7 @@ async def logout_controller(response: Response, refresh_token: str | None):
 
         response.delete_cookie(
             "refresh_token",
-            path="/auth",
-            domain=os.getenv("DOMAIN")   
+            path="/"   
         )
 
     return {"status": "logged out"}
