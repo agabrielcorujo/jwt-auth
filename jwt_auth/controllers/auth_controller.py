@@ -44,8 +44,7 @@ async def login_controller(credentials: schema.LoginRequest, response: Response)
         httponly=True,
         secure=True,
         samesite="none",
-        path="/auth",
-        domain=os.getenv("DOMAIN")
+        path="/"
     )
 
     return {
